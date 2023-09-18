@@ -19,13 +19,12 @@ template <typename T> struct Node {
 public:
   Node(const T &t_value, Node *t_parent) : value(t_value), parent(t_parent){};
   Node(const T &t_value, Color t_color) : value(t_value), color(t_color){};
-  Node(const T &t_value, Color t_color, Node *t_parent, Node *t_left,
-       Node *t_right)
-      : value(t_value), color(t_color) {
-  }
+  Node(const T &t_value, Color t_color, Node<T> *t_parent, Node<T> *t_left,
+       Node<T> *t_right);
 
 };
 
+// RBT implementation
 template <typename T> class TreeSet { 
 public: 
     TreeSet();
@@ -54,7 +53,7 @@ private:
     auto update_parent_child_link(
         Node<T>* t_parent, Node<T>* t_old_child, Node<T>* t_new_child 
     ) -> void;
-    
+
 private:
     Node<T>* m_root {nullptr};
     Node<T>* nil{nullptr};
