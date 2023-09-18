@@ -2,6 +2,7 @@
 #define __TREESET_H__
 
 #include <cstddef>
+#include <memory>
 
 enum Color : bool {
   Red = true,
@@ -29,22 +30,25 @@ template <typename T> class TreeSet {
 public: 
     TreeSet();
 
+    auto insert(const T &t_value = T{}) -> bool;
+    auto remove(const T& t_value) -> bool;
+
     auto size() const noexcept -> std::size_t;
     auto height() const noexcept -> std::size_t;
     auto is_empty() const noexcept -> bool;
     auto is_element(const T& t_value) const noexcept -> bool;
 
     auto root() const noexcept -> Node<T>;
-    auto min() const noexcept -> Node<T>;
-    auto max() const noexcept -> Node<T>;
+    auto min(Node<T>* t_node) const noexcept -> Node<T>;
+    auto max(Node<T>* t_node) const noexcept -> Node<T>;
 
 private:
-    auto fix_insertion_at(Node<T>* node) -> void;
-    auto left_rotate(Node<T>* node) -> void;
-    auto right_rotate(Node<T>* node) -> void;
-    auto fix_delete(Node<T>* node) -> void;
+    auto fix_insertion_at(Node<T>* t_node) -> void;
+    auto left_rotate(Node<T>* t_node) -> void;
+    auto right_rotate(Node<T>* t_node) -> void;
+    auto fix_delete(Node<T>* t_node) -> void;
 
-    auto successor(Node<T>* node) -> Node<T>*;
+    auto successor(Node<T>* t_node) -> Node<T>*;
     auto search(const T& t_value, Node<T>* t_node) -> Node<T>*;
     auto height(Node<T>* t_node) -> std::size_t;
 
@@ -55,8 +59,8 @@ private:
     ) -> void;
 
 private:
-    Node<T>* m_root {nullptr};
-    Node<T>* nil{nullptr};
+    Node<T>* m_root {nullptr}; // should I change this?
+    std::unique_ptr<Node<T>> NIL{nullptr};
     std::size_t node_count {0};
 
 };
