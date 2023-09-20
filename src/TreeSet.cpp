@@ -321,8 +321,10 @@ template <typename T> auto TreeSet<T>::height(Node<T> *node) -> std::size_t {
   if (node->left == NIL && node->right == NIL)
     return 1;
 
-  return 1 + (height(node->left) > height(node->right)) ? height(node->left)
-                                                        : height(node->right);
+  std::size_t t_height = (height(node->left) > height(node->right))
+                             ? height(node->left)
+                             : height(node->right);
+  return (t_height + 1);
 }
 
 template <typename T>
