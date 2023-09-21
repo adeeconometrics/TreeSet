@@ -19,9 +19,8 @@ Node<T>::Node(const T &t_value, Color t_color, Node *t_parent, Node *t_left,
   right = t_right;
 }
 
-template <typename T> TreeSet<T>::TreeSet() {
-  NIL = make_unique(Node(Color::Black, T{})); // look into this!
-
+template <typename T>
+TreeSet<T>::TreeSet() : NIL(make_unique(Node(Color::Black, T{}))) {
   NIL->left = NIL;
   NIL->right = NIL;
   NIL->parent = NIL;
