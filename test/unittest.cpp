@@ -2,7 +2,9 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include <algorithm>
+#include <functional>
 #include <numeric>
+#include <string>
 #include <vector>
 
 using ::testing::ElementsAre;
@@ -55,6 +57,44 @@ protected:
         return false;
     }
     return true;
+  }
+};
+
+class TreeSetGreaterCompTest : public ::testing::Test {
+protected:
+  TreeSet<int, std::greater<int>> tree;
+
+  auto inorder_vec() -> std::vector<int> {
+    std::vector<int> result;
+    for (auto it = tree.begin(); it != tree.end(); ++it)
+      result.push_back(*it);
+    return result;
+  }
+
+  auto reverse_inorder_vec() -> std::vector<int> {
+    std::vector<int> result;
+    for (auto it = tree.rbegin(); it != tree.rend(); ++it)
+      result.push_back(*it);
+    return result;
+  }
+
+  auto contains_all(const std::vector<int> &v,
+                    std::initializer_list<int> expected) -> bool {
+    for (int val : expected) {
+      if (std::find(v.begin(), v.end(), val) == v.end())
+        return false;
+    }
+    return true;
+  }
+};
+
+class TreeSetInitListTest : public ::testing::Test {
+protected:
+  auto inorder_vec(const TreeSet<int> &t) -> std::vector<int> {
+    std::vector<int> result;
+    for (auto it = t.cbegin(); it != t.cend(); ++it)
+      result.push_back(*it);
+    return result;
   }
 };
 
@@ -578,4 +618,354 @@ TEST_F(TreeSetTest, RemoveAllElements) {
   EXPECT_TRUE(tree.is_empty());
   EXPECT_EQ(tree.size(), 0u);
   EXPECT_TRUE(tree.begin() == tree.end());
+}
+
+// ============================================================================
+// Group 11: Default Comparator (std::less)
+// ============================================================================
+
+TEST_F(TreeSetTest, DefaultComparatorSortsAscending) {
+  for (int v : {5, 3, 7, 1, 4, 6, 8})
+    ASSERT_TRUE(tree.insert(v));
+  EXPECT_THAT(inorder_vec(), ElementsAre(1, 3, 4, 5, 6, 7, 8));
+}
+
+TEST_F(TreeSetTest, DefaultComparatorDuplicateRejection) {
+  ASSERT_TRUE(tree.insert(5));
+  EXPECT_FALSE(tree.insert(5));
+  EXPECT_EQ(tree.size(), 1u);
+}
+
+TEST_F(TreeSetTest, DefaultComparatorLookup) {
+  for (int v : {5, 3, 7, 1, 4})
+    ASSERT_TRUE(tree.insert(v));
+  EXPECT_TRUE(tree.is_element(1));
+  EXPECT_TRUE(tree.is_element(5));
+  EXPECT_FALSE(tree.is_element(99));
+}
+
+// ============================================================================
+// Group 12: Custom Comparator (std::greater)
+// ============================================================================
+
+TEST_F(TreeSetGreaterCompTest, InsertAndSize) {
+  ASSERT_TRUE(tree.insert(5));
+  ASSERT_TRUE(tree.insert(3));
+  ASSERT_TRUE(tree.insert(7));
+  EXPECT_EQ(tree.size(), 3u);
+}
+
+TEST_F(TreeSetGreaterCompTest, InorderSortsDescending) {
+  for (int v : {5, 3, 7, 1, 4, 6, 8})
+    ASSERT_TRUE(tree.insert(v));
+  EXPECT_THAT(inorder_vec(), ElementsAre(8, 7, 6, 5, 4, 3, 1));
+}
+
+TEST_F(TreeSetGreaterCompTest, DuplicateRejection) {
+  ASSERT_TRUE(tree.insert(5));
+  EXPECT_FALSE(tree.insert(5));
+  EXPECT_EQ(tree.size(), 1u);
+}
+
+TEST_F(TreeSetGreaterCompTest, Lookup) {
+  for (int v : {5, 3, 7, 1, 4})
+    ASSERT_TRUE(tree.insert(v));
+  EXPECT_TRUE(tree.is_element(1));
+  EXPECT_TRUE(tree.is_element(5));
+  EXPECT_FALSE(tree.is_element(99));
+}
+
+TEST_F(TreeSetGreaterCompTest, Remove) {
+  for (int v : {5, 3, 7, 1, 4})
+    ASSERT_TRUE(tree.insert(v));
+  ASSERT_TRUE(tree.remove(4));
+  EXPECT_FALSE(tree.is_element(4));
+  EXPECT_EQ(tree.size(), 4u);
+  auto v = inorder_vec();
+  EXPECT_TRUE(std::is_sorted(v.begin(), v.end(), std::greater<int>{}));
+}
+
+TEST_F(TreeSetGreaterCompTest, ReverseTraversalAscending) {
+  for (int v : {5, 3, 7, 1, 4})
+    ASSERT_TRUE(tree.insert(v));
+  EXPECT_THAT(reverse_inorder_vec(), ElementsAre(1, 3, 4, 5, 7));
+}
+
+TEST_F(TreeSetGreaterCompTest, RemoveRedLeaf) {
+  for (int v : {5, 3, 7})
+    ASSERT_TRUE(tree.insert(v));
+  ASSERT_TRUE(tree.remove(3));
+  EXPECT_FALSE(tree.is_element(3));
+  EXPECT_EQ(tree.size(), 2u);
+  auto in = inorder_vec();
+  EXPECT_TRUE(std::is_sorted(in.begin(), in.end(), std::greater<int>{}));
+}
+
+TEST_F(TreeSetGreaterCompTest, RemoveAllElements) {
+  for (int v : {5, 3, 7})
+    ASSERT_TRUE(tree.insert(v));
+  ASSERT_TRUE(tree.remove(3));
+  ASSERT_TRUE(tree.remove(5));
+  ASSERT_TRUE(tree.remove(7));
+  EXPECT_TRUE(tree.is_empty());
+}
+
+// ============================================================================
+// Group 13: Initializer List
+// ============================================================================
+
+TEST_F(TreeSetInitListTest, EmptyInitializerList) {
+  TreeSet<int> t{};
+  EXPECT_TRUE(t.is_empty());
+  EXPECT_EQ(t.size(), 0u);
+}
+
+TEST_F(TreeSetInitListTest, SingleElement) {
+  TreeSet<int> t{5};
+  EXPECT_EQ(t.size(), 1u);
+  EXPECT_TRUE(t.is_element(5));
+}
+
+TEST_F(TreeSetInitListTest, MultipleElements) {
+  TreeSet<int> t{5, 3, 7, 1, 4};
+  EXPECT_EQ(t.size(), 5u);
+  EXPECT_THAT(inorder_vec(t), ElementsAre(1, 3, 4, 5, 7));
+}
+
+TEST_F(TreeSetInitListTest, DuplicatesIgnored) {
+  TreeSet<int> t{5, 3, 5, 7, 3};
+  EXPECT_EQ(t.size(), 3u);
+  EXPECT_THAT(inorder_vec(t), ElementsAre(3, 5, 7));
+}
+
+TEST_F(TreeSetInitListTest, AlreadySorted) {
+  TreeSet<int> t{1, 2, 3, 4, 5};
+  EXPECT_EQ(t.size(), 5u);
+  EXPECT_THAT(inorder_vec(t), ElementsAre(1, 2, 3, 4, 5));
+}
+
+TEST_F(TreeSetInitListTest, ReverseSorted) {
+  TreeSet<int> t{5, 4, 3, 2, 1};
+  EXPECT_EQ(t.size(), 5u);
+  EXPECT_THAT(inorder_vec(t), ElementsAre(1, 2, 3, 4, 5));
+}
+
+TEST_F(TreeSetInitListTest, WithCustomComparator) {
+  TreeSet<int, std::greater<int>> t{5, 3, 7, 1, 4};
+  EXPECT_EQ(t.size(), 5u);
+  std::vector<int> result;
+  for (auto it = t.begin(); it != t.end(); ++it)
+    result.push_back(*it);
+  EXPECT_THAT(result, ElementsAre(7, 5, 4, 3, 1));
+}
+
+TEST_F(TreeSetInitListTest, InsertAfterConstruction) {
+  TreeSet<int> t{3, 1, 5};
+  ASSERT_TRUE(t.insert(4));
+  ASSERT_TRUE(t.insert(2));
+  EXPECT_EQ(t.size(), 5u);
+  EXPECT_THAT(inorder_vec(t), ElementsAre(1, 2, 3, 4, 5));
+}
+
+TEST_F(TreeSetInitListTest, RemoveAfterConstruction) {
+  TreeSet<int> t{5, 3, 7, 1, 4};
+  ASSERT_TRUE(t.remove(3));
+  ASSERT_TRUE(t.remove(7));
+  EXPECT_EQ(t.size(), 3u);
+  EXPECT_THAT(inorder_vec(t), ElementsAre(1, 4, 5));
+}
+
+// ============================================================================
+// Group 14: SFINAE Validation
+// ============================================================================
+
+TEST(SfinaeValidationTest, ValidComparatorStdLess) {
+  EXPECT_TRUE((detail::is_comparator_valid_v<int, std::less<int>>));
+}
+
+TEST(SfinaeValidationTest, ValidComparatorStdGreater) {
+  EXPECT_TRUE((detail::is_comparator_valid_v<int, std::greater<int>>));
+}
+
+TEST(SfinaeValidationTest, ValidComparatorLambda) {
+  auto comp = [](int a, int b) { return a < b; };
+  EXPECT_TRUE((detail::is_comparator_valid_v<int, decltype(comp)>));
+}
+
+TEST(SfinaeValidationTest, ValidComparatorFunctor) {
+  struct IntComp {
+    auto operator()(int a, int b) const -> bool { return a < b; }
+  };
+  EXPECT_TRUE((detail::is_comparator_valid_v<int, IntComp>));
+}
+
+TEST(SfinaeValidationTest, InvalidComparatorNotCallable) {
+  struct NotCallable {};
+  EXPECT_FALSE((detail::is_comparator_valid_v<int, NotCallable>));
+}
+
+TEST(SfinaeValidationTest, InvalidComparatorWrongArgCount) {
+  struct OneArg {
+    auto operator()(int) const -> bool { return true; }
+  };
+  EXPECT_FALSE((detail::is_comparator_valid_v<int, OneArg>));
+}
+
+TEST(SfinaeValidationTest, InvalidComparatorWrongArgType) {
+  struct WrongType {
+    auto operator()(std::string, std::string) const -> bool { return true; }
+  };
+  EXPECT_FALSE((detail::is_comparator_valid_v<int, WrongType>));
+}
+
+TEST(SfinaeValidationTest, InvalidComparatorNonBoolReturn) {
+  struct ReturnsString {
+    auto operator()(int, int) const -> std::string { return ""; }
+  };
+  EXPECT_FALSE((detail::is_comparator_valid_v<int, ReturnsString>));
+}
+
+TEST(SfinaeValidationTest, StringWithLess) {
+  EXPECT_TRUE(
+      (detail::is_comparator_valid_v<std::string, std::less<std::string>>));
+}
+
+TEST(SfinaeValidationTest, StringWithGreater) {
+  EXPECT_TRUE(
+      (detail::is_comparator_valid_v<std::string, std::greater<std::string>>));
+}
+
+// ============================================================================
+// Group 15: Removal Rotation Cases
+// ============================================================================
+
+TEST_F(TreeSetTest, RemoveTriggersCase2_SiblingBlackBothChildrenBlack) {
+  //       10(B)
+  //      /    \
+  //    5(B)   15(B)
+  //   /  \
+  // 1(B)  7(B)
+  //
+  // Remove 7 (black leaf) -> sibling 1 is black, both children black
+  // -> recolor sibling red, move up to parent 5
+  for (int v : {10, 5, 15, 1, 7})
+    ASSERT_TRUE(tree.insert(v));
+
+  ASSERT_TRUE(tree.remove(7));
+  EXPECT_FALSE(tree.is_element(7));
+  EXPECT_EQ(tree.size(), 4u);
+  EXPECT_THAT(inorder_vec(), ElementsAre(1, 5, 10, 15));
+}
+
+TEST_F(TreeSetTest, RemoveTriggersCase3_SiblingBlackLeftChildRed) {
+  //       20(B)
+  //      /    \
+  //    10(B)  25(B)
+  //   /    \
+  //  5(B)  15(R)
+  //  /
+  // 1(R)
+  //
+  // Remove 1 (red) -> no fixup, tree unchanged
+  // Remove 5 (black, now leaf) -> sibling 15 is red, triggers rotation
+  // After fixup: 15 becomes root, 10 left, 20 right
+  for (int v : {20, 10, 25, 5, 15, 1})
+    ASSERT_TRUE(tree.insert(v));
+
+  ASSERT_TRUE(tree.remove(1));
+  EXPECT_EQ(tree.size(), 5u);
+  EXPECT_THAT(inorder_vec(), ElementsAre(5, 10, 15, 20, 25));
+
+  ASSERT_TRUE(tree.remove(5));
+  EXPECT_EQ(tree.size(), 4u);
+  auto in = inorder_vec();
+  EXPECT_THAT(in, ElementsAre(10, 15, 20, 25));
+  EXPECT_TRUE(is_sorted_ascending(in));
+}
+
+TEST_F(TreeSetTest, RemoveTriggersCase4_SiblingBlackRightChildRed) {
+  //       20(B)
+  //      /    \
+  //    10(B)  25(B)
+  //   /    \
+  //  5(B)  15(B)
+  //         \
+  //         18(R)
+  //
+  // Remove 5 (black leaf) -> sibling 15 has red right child 18
+  // -> left rotate on 10, recolor
+  for (int v : {20, 10, 25, 5, 15, 18})
+    ASSERT_TRUE(tree.insert(v));
+
+  ASSERT_TRUE(tree.remove(5));
+  EXPECT_EQ(tree.size(), 5u);
+  auto in = inorder_vec();
+  EXPECT_THAT(in, ElementsAre(10, 15, 18, 20, 25));
+  EXPECT_TRUE(is_sorted_ascending(in));
+}
+
+TEST_F(TreeSetTest, RemoveMaintainsRootBlack) {
+  for (int v : {10, 5, 15, 1, 7, 12, 20})
+    ASSERT_TRUE(tree.insert(v));
+
+  ASSERT_TRUE(tree.remove(1));
+  EXPECT_EQ(tree.root()->color, Color::Black);
+
+  ASSERT_TRUE(tree.remove(7));
+  EXPECT_EQ(tree.root()->color, Color::Black);
+}
+
+TEST_F(TreeSetTest, RemoveRedLeafNoFixup) {
+  for (int v : {10, 5, 15})
+    ASSERT_TRUE(tree.insert(v));
+
+  ASSERT_TRUE(tree.remove(5));
+  EXPECT_EQ(tree.size(), 2u);
+  EXPECT_FALSE(tree.is_element(5));
+  EXPECT_THAT(inorder_vec(), ElementsAre(10, 15));
+}
+
+TEST_F(TreeSetTest, RemoveSequentialMaintainsInvariant) {
+  for (int i = 1; i <= 15; ++i)
+    ASSERT_TRUE(tree.insert(i));
+
+  for (int i = 1; i <= 10; ++i) {
+    ASSERT_TRUE(tree.remove(i));
+    auto in = inorder_vec();
+    EXPECT_TRUE(is_sorted_ascending(in));
+    EXPECT_EQ(in.size(), static_cast<size_t>(15 - i));
+  }
+
+  EXPECT_THAT(inorder_vec(), ElementsAre(11, 12, 13, 14, 15));
+}
+
+TEST_F(TreeSetTest, RemoveNonexistentInPopulatedTree) {
+  for (int v : {10, 5, 15, 1, 7, 12, 20})
+    ASSERT_TRUE(tree.insert(v));
+
+  EXPECT_FALSE(tree.remove(99));
+  EXPECT_EQ(tree.size(), 7u);
+  EXPECT_THAT(inorder_vec(), ElementsAre(1, 5, 7, 10, 12, 15, 20));
+}
+
+TEST_F(TreeSetTest, RemoveRootWithTwoChildren) {
+  for (int v : {10, 5, 15, 3, 7, 12, 20})
+    ASSERT_TRUE(tree.insert(v));
+
+  ASSERT_TRUE(tree.remove(10));
+  EXPECT_FALSE(tree.is_element(10));
+  EXPECT_EQ(tree.size(), 6u);
+  auto in = inorder_vec();
+  EXPECT_TRUE(is_sorted_ascending(in));
+  EXPECT_EQ(tree.root()->color, Color::Black);
+}
+
+TEST_F(TreeSetGreaterCompTest, RemoveTriggersRotationWithGreaterComp) {
+  for (int v : {10, 15, 5, 20, 12, 3, 7})
+    ASSERT_TRUE(tree.insert(v));
+
+  ASSERT_TRUE(tree.remove(3));
+  EXPECT_EQ(tree.size(), 6u);
+  auto in = inorder_vec();
+  EXPECT_TRUE(std::is_sorted(in.begin(), in.end(), std::greater<int>{}));
 }
