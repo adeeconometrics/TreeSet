@@ -1,0 +1,54 @@
+rules:
+  - id: cpp-raw-new-without-raii
+    patterns:
+      - pattern: |
+          $TYPE * $VAR = new $T(...);
+      - pattern-not-inside: |
+          std::make_unique<...>(...)
+      - pattern-not-inside: |
+          std::make_shared<...>(...)
+    message: |
+      Raw 'new' without a RAII wrapper (std::unique_ptr or
+      std::shared_ptr). Raw owning pointers are error-prone and can
+      cause memory leaks. Prefer std::make_unique or std::make_shared.
+    languages: [cpp]
+    severity: WARNING
+    metadata:
+      category: memory-safety
+      cwe: "CWE-401: Memory Leak"
+      confidence: MEDIUM
+      references:
+        - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#r3-prefer-smart-pointers-to-raw-pointers
+
+  - id: cpp-deref-after-delete
+    patterns:
+      - pattern: |
+          delete $PTR;
+          ...
+          ... $PTR ...;
+      - pattern: |
+          delete[] $PTR;
+          ...
+          ... $PTR ...;
+    message: |
+      Use of '$PTR' after delete. Accessing a pointer after it has been
+      freed leads to undefined behavior (use-after-free).
+    languages: [cpp]
+    severity: ERROR
+    metadata:
+      category: memory-safety
+      cwe: "CWE-416: Use After Free"
+      confidence: HIGH
+
+  - id: cpp-return-local-address
+    pattern: return &$LOCAL;
+    message: |
+      Returning address of local variable '$LOCAL'. The pointer becomes
+      dangling as soon as the function returns, leading to undefined
+      behavior.
+    languages: [cpp]
+    severity: ERROR
+    metadata:
+      category: memory-safety
+      cwe: "CWE-562: Return of Stack Variable Address"
+      confidence: HIGH
