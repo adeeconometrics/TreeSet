@@ -2,6 +2,8 @@
 #define TREESET_HPP
 
 #include <cstddef>
+#include <functional>
+#include <initializer_list>
 #include <iterator>
 #include <type_traits>
 
@@ -33,9 +35,27 @@ inline constexpr inorder_t inorder{};
 inline constexpr preorder_t preorder{};
 inline constexpr postorder_t postorder{};
 
-template <typename T> class TreeSet;
+template <typename T, typename Compare = std::less<T>> class TreeSet;
 
-template <typename T, typename Traversal = inorder_t, bool IsConst = false>
+namespace detail {
+template <typename T, typename Compare, typename = void>
+struct is_comparator_valid : std::false_type {};
+
+template <typename T, typename Compare>
+struct is_comparator_valid<
+    T, Compare,
+    std::enable_if_t<std::is_convertible_v<
+        decltype(std::declval<const Compare &>()(std::declval<const T &>(),
+                                                 std::declval<const T &>())),
+        bool>>> : std::true_type {};
+
+template <typename T, typename Compare>
+inline constexpr bool is_comparator_valid_v =
+    is_comparator_valid<T, Compare>::value;
+} // namespace detail
+
+template <typename T, typename Traversal = inorder_t, bool IsConst = false,
+          typename Compare = std::less<T>>
 class TreeSetIterator {
 public:
   using value_type = T;
@@ -45,7 +65,8 @@ public:
   using iterator_category = std::bidirectional_iterator_tag;
 
   TreeSetIterator() = default;
-  TreeSetIterator(Node<T> *t_current, const TreeSet<T> *t_tree, bool t_reverse)
+  TreeSetIterator(Node<T> *t_current, const TreeSet<T, Compare> *t_tree,
+                  bool t_reverse)
       : m_current(t_current), m_tree(t_tree), m_reverse(t_reverse) {}
 
   auto operator*() const -> reference { return m_current->value; }
@@ -91,18 +112,23 @@ public:
 
 private:
   Node<T> *m_current{nullptr};
-  const TreeSet<T> *m_tree{nullptr};
+  const TreeSet<T, Compare> *m_tree{nullptr};
   bool m_reverse{false};
 
-  template <typename U> friend class TreeSet;
+  template <typename U, typename C> friend class TreeSet;
 
   auto advance_forward() -> void;
   auto advance_backward() -> void;
 };
 
-template <typename T> class TreeSet {
+template <typename T, typename Compare> class TreeSet {
+  static_assert(detail::is_comparator_valid_v<T, Compare>,
+                "Compare must be callable with (const T&, const T&) and return "
+                "a type convertible to bool");
+
 public:
   TreeSet();
+  TreeSet(std::initializer_list<T> t_init);
   ~TreeSet();
 
   TreeSet(const TreeSet &) = delete;
@@ -120,33 +146,33 @@ public:
   auto min(Node<T> *t_node) noexcept -> Node<T> *;
   auto max(Node<T> *t_node) noexcept -> Node<T> *;
 
-  auto begin() noexcept -> TreeSetIterator<T, inorder_t, false>;
-  auto end() noexcept -> TreeSetIterator<T, inorder_t, false>;
-  auto rbegin() noexcept -> TreeSetIterator<T, inorder_t, false>;
-  auto rend() noexcept -> TreeSetIterator<T, inorder_t, false>;
+  auto begin() noexcept -> TreeSetIterator<T, inorder_t, false, Compare>;
+  auto end() noexcept -> TreeSetIterator<T, inorder_t, false, Compare>;
+  auto rbegin() noexcept -> TreeSetIterator<T, inorder_t, false, Compare>;
+  auto rend() noexcept -> TreeSetIterator<T, inorder_t, false, Compare>;
 
-  auto cbegin() const noexcept -> TreeSetIterator<T, inorder_t, true>;
-  auto cend() const noexcept -> TreeSetIterator<T, inorder_t, true>;
-  auto crbegin() const noexcept -> TreeSetIterator<T, inorder_t, true>;
-  auto crend() const noexcept -> TreeSetIterator<T, inorder_t, true>;
-
-  template <typename Traversal>
-  auto begin() noexcept -> TreeSetIterator<T, Traversal, false>;
-  template <typename Traversal>
-  auto end() noexcept -> TreeSetIterator<T, Traversal, false>;
-  template <typename Traversal>
-  auto rbegin() noexcept -> TreeSetIterator<T, Traversal, false>;
-  template <typename Traversal>
-  auto rend() noexcept -> TreeSetIterator<T, Traversal, false>;
+  auto cbegin() const noexcept -> TreeSetIterator<T, inorder_t, true, Compare>;
+  auto cend() const noexcept -> TreeSetIterator<T, inorder_t, true, Compare>;
+  auto crbegin() const noexcept -> TreeSetIterator<T, inorder_t, true, Compare>;
+  auto crend() const noexcept -> TreeSetIterator<T, inorder_t, true, Compare>;
 
   template <typename Traversal>
-  auto cbegin() const noexcept -> TreeSetIterator<T, Traversal, true>;
+  auto begin() noexcept -> TreeSetIterator<T, Traversal, false, Compare>;
   template <typename Traversal>
-  auto cend() const noexcept -> TreeSetIterator<T, Traversal, true>;
+  auto end() noexcept -> TreeSetIterator<T, Traversal, false, Compare>;
   template <typename Traversal>
-  auto crbegin() const noexcept -> TreeSetIterator<T, Traversal, true>;
+  auto rbegin() noexcept -> TreeSetIterator<T, Traversal, false, Compare>;
   template <typename Traversal>
-  auto crend() const noexcept -> TreeSetIterator<T, Traversal, true>;
+  auto rend() noexcept -> TreeSetIterator<T, Traversal, false, Compare>;
+
+  template <typename Traversal>
+  auto cbegin() const noexcept -> TreeSetIterator<T, Traversal, true, Compare>;
+  template <typename Traversal>
+  auto cend() const noexcept -> TreeSetIterator<T, Traversal, true, Compare>;
+  template <typename Traversal>
+  auto crbegin() const noexcept -> TreeSetIterator<T, Traversal, true, Compare>;
+  template <typename Traversal>
+  auto crend() const noexcept -> TreeSetIterator<T, Traversal, true, Compare>;
 
 private:
   auto fix_insertion_at(Node<T> *t_node) -> void;
@@ -173,8 +199,9 @@ private:
   Node<T> *m_nil{nullptr};
   Node<T> *m_root{nullptr};
   std::size_t node_count{0};
+  Compare m_comp{};
 
-  template <typename U, typename Traversal, bool IsConst>
+  template <typename U, typename Traversal, bool IsConst, typename C>
   friend class TreeSetIterator;
 };
 
