@@ -14,7 +14,12 @@ jobs:
       - name: git
         run: git --version
       - name: configure
-        run: sudo apt-get install make cmake build-essential
+        run: |
+          sudo apt-get install make cmake build-essential libomp-dev doxygen
+          pip3 install sphinx
+          pip3 install breathe
+          pip3 install pydata-sphinx-theme
+          pip3 install sphinx-sitemap
       - name: gtest
         run: | 
           sudo apt-get install libgtest-dev
@@ -38,3 +43,18 @@ jobs:
         run: | 
           cd ${{github.workspace}}/build 
           ctest --output-on-failure
+      - name: checkout repo
+        uses: actions/checkout@1.0.0
+      - name: build docs
+        run: |
+          cd docs_sphinx
+          doxygen Doxyfile.in
+          make html
+          cd _build/html
+          touch .nojekyll
+      - name: deploy docs
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: docs_sphinx/_build/html
