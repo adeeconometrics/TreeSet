@@ -3,19 +3,26 @@
 
 #include <utility>
 
-template <typename T>
-TreeSet<T>::TreeSet()
+template <typename T, typename Compare>
+TreeSet<T, Compare>::TreeSet()
     : m_nil(new Node<T>(T{}, Color::Black, nullptr, nullptr, nullptr)),
       m_root(m_nil) {
   m_nil->left = m_nil->right = m_nil->parent = m_nil;
 }
 
-template <typename T> TreeSet<T>::~TreeSet() {
+template <typename T, typename Compare>
+TreeSet<T, Compare>::TreeSet(std::initializer_list<T> t_init) : TreeSet() {
+  for (const auto &val : t_init)
+    insert(val);
+}
+
+template <typename T, typename Compare> TreeSet<T, Compare>::~TreeSet() {
   destroy(m_root);
   delete m_nil;
 }
 
-template <typename T> auto TreeSet<T>::destroy(Node<T> *t_node) -> void {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::destroy(Node<T> *t_node) -> void {
   if (t_node != m_nil) {
     destroy(t_node->left);
     destroy(t_node->right);
@@ -23,16 +30,17 @@ template <typename T> auto TreeSet<T>::destroy(Node<T> *t_node) -> void {
   }
 }
 
-template <typename T> auto TreeSet<T>::insert(const T &t_value) -> bool {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::insert(const T &t_value) -> bool {
   auto *z = new Node<T>(t_value, Color::Red, m_nil, m_nil, m_nil);
   auto *y = m_nil;
   auto *x = m_root;
 
   while (x != m_nil) {
     y = x;
-    if (t_value < x->value) {
+    if (m_comp(t_value, x->value)) {
       x = x->left;
-    } else if (x->value < t_value) {
+    } else if (m_comp(x->value, t_value)) {
       x = x->right;
     } else {
       delete z;
@@ -43,7 +51,7 @@ template <typename T> auto TreeSet<T>::insert(const T &t_value) -> bool {
   z->parent = y;
   if (y == m_nil) {
     m_root = z;
-  } else if (t_value < y->value) {
+  } else if (m_comp(t_value, y->value)) {
     y->left = z;
   } else {
     y->right = z;
@@ -54,7 +62,8 @@ template <typename T> auto TreeSet<T>::insert(const T &t_value) -> bool {
   return true;
 }
 
-template <typename T> auto TreeSet<T>::remove(const T &t_value) -> bool {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::remove(const T &t_value) -> bool {
   auto *z = search(t_value, m_root);
   if (z == m_nil) {
     return false;
@@ -99,7 +108,8 @@ template <typename T> auto TreeSet<T>::remove(const T &t_value) -> bool {
   return true;
 }
 
-template <typename T> auto TreeSet<T>::successor(Node<T> *t_node) -> Node<T> * {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::successor(Node<T> *t_node) -> Node<T> * {
   if (t_node->right != m_nil) {
     auto *node = t_node->right;
     while (node->left != m_nil) {
@@ -115,8 +125,8 @@ template <typename T> auto TreeSet<T>::successor(Node<T> *t_node) -> Node<T> * {
   return parent;
 }
 
-template <typename T>
-auto TreeSet<T>::predecessor(Node<T> *t_node) -> Node<T> * {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::predecessor(Node<T> *t_node) -> Node<T> * {
   if (t_node->left != m_nil) {
     auto *node = t_node->left;
     while (node->right != m_nil) {
@@ -132,23 +142,23 @@ auto TreeSet<T>::predecessor(Node<T> *t_node) -> Node<T> * {
   return parent;
 }
 
-template <typename T>
-auto TreeSet<T>::search(const T &t_value, Node<T> *t_node) const
-    -> Node<T> * {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::search(const T &t_value,
+                                 Node<T> *t_node) const -> Node<T> * {
   if (t_node == m_nil) {
     return m_nil;
   }
-  if (t_value == t_node->value) {
+  if (!m_comp(t_value, t_node->value) && !m_comp(t_node->value, t_value)) {
     return t_node;
   }
-  if (t_value < t_node->value) {
+  if (m_comp(t_value, t_node->value)) {
     return search(t_value, t_node->left);
   }
   return search(t_value, t_node->right);
 }
 
-template <typename T>
-auto TreeSet<T>::height(Node<T> *t_node) const -> std::size_t {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::height(Node<T> *t_node) const -> std::size_t {
   if (t_node == m_nil) {
     return 0;
   }
@@ -160,8 +170,8 @@ auto TreeSet<T>::height(Node<T> *t_node) const -> std::size_t {
   return (left_h > right_h ? left_h : right_h) + 1;
 }
 
-template <typename T>
-auto TreeSet<T>::fix_insertion_at(Node<T> *t_node) -> void {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::fix_insertion_at(Node<T> *t_node) -> void {
   while (t_node->parent->color == Color::Red) {
     if (t_node->parent == t_node->parent->parent->left) {
       auto *uncle = t_node->parent->parent->right;
@@ -200,7 +210,8 @@ auto TreeSet<T>::fix_insertion_at(Node<T> *t_node) -> void {
   m_root->color = Color::Black;
 }
 
-template <typename T> auto TreeSet<T>::left_rotate(Node<T> *t_node) -> void {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::left_rotate(Node<T> *t_node) -> void {
   auto *y = t_node->right;
   t_node->right = y->left;
   if (y->left != m_nil) {
@@ -218,7 +229,8 @@ template <typename T> auto TreeSet<T>::left_rotate(Node<T> *t_node) -> void {
   t_node->parent = y;
 }
 
-template <typename T> auto TreeSet<T>::right_rotate(Node<T> *t_node) -> void {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::right_rotate(Node<T> *t_node) -> void {
   auto *y = t_node->left;
   t_node->left = y->right;
   if (y->right != m_nil) {
@@ -236,8 +248,8 @@ template <typename T> auto TreeSet<T>::right_rotate(Node<T> *t_node) -> void {
   t_node->parent = y;
 }
 
-template <typename T>
-auto TreeSet<T>::transplant(Node<T> *t_u, Node<T> *t_v) -> void {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::transplant(Node<T> *t_u, Node<T> *t_v) -> void {
   if (t_u->parent == m_nil) {
     m_root = t_v;
   } else if (t_u == t_u->parent->left) {
@@ -248,15 +260,14 @@ auto TreeSet<T>::transplant(Node<T> *t_u, Node<T> *t_v) -> void {
   t_v->parent = t_u->parent;
 }
 
-template <typename T>
-auto TreeSet<T>::swap_color(Node<T> *t_a, Node<T> *t_b) -> void {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::swap_color(Node<T> *t_a, Node<T> *t_b) -> void {
   std::swap(t_a->color, t_b->color);
 }
 
-template <typename T>
-auto TreeSet<T>::update_parent_child_link(Node<T> *t_parent,
-                                           Node<T> *t_old_child,
-                                           Node<T> *t_new_child) -> void {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::update_parent_child_link(
+    Node<T> *t_parent, Node<T> *t_old_child, Node<T> *t_new_child) -> void {
   if (t_parent != m_nil) {
     if (t_parent->left == t_old_child) {
       t_parent->left = t_new_child;
@@ -266,7 +277,8 @@ auto TreeSet<T>::update_parent_child_link(Node<T> *t_parent,
   }
 }
 
-template <typename T> auto TreeSet<T>::fix_delete(Node<T> *t_node) -> void {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::fix_delete(Node<T> *t_node) -> void {
   while (t_node != m_root && t_node->color == Color::Black) {
     if (t_node == t_node->parent->left) {
       auto *w = t_node->parent->right;
@@ -321,7 +333,8 @@ template <typename T> auto TreeSet<T>::fix_delete(Node<T> *t_node) -> void {
   t_node->color = Color::Black;
 }
 
-template <typename T> auto TreeSet<T>::leftmost() const -> Node<T> * {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::leftmost() const -> Node<T> * {
   if (m_root == m_nil) {
     return m_nil;
   }
@@ -332,7 +345,8 @@ template <typename T> auto TreeSet<T>::leftmost() const -> Node<T> * {
   return node;
 }
 
-template <typename T> auto TreeSet<T>::rightmost() const -> Node<T> * {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::rightmost() const -> Node<T> * {
   if (m_root == m_nil) {
     return m_nil;
   }
@@ -343,7 +357,8 @@ template <typename T> auto TreeSet<T>::rightmost() const -> Node<T> * {
   return node;
 }
 
-template <typename T> auto TreeSet<T>::first_postorder() const -> Node<T> * {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::first_postorder() const -> Node<T> * {
   if (m_root == m_nil) {
     return m_nil;
   }
@@ -360,7 +375,8 @@ template <typename T> auto TreeSet<T>::first_postorder() const -> Node<T> * {
   return node;
 }
 
-template <typename T> auto TreeSet<T>::last_preorder() const -> Node<T> * {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::last_preorder() const -> Node<T> * {
   if (m_root == m_nil) {
     return m_nil;
   }
@@ -377,157 +393,181 @@ template <typename T> auto TreeSet<T>::last_preorder() const -> Node<T> * {
   return node;
 }
 
-template <typename T> auto TreeSet<T>::size() const noexcept -> std::size_t {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::size() const noexcept -> std::size_t {
   return node_count;
 }
 
-template <typename T> auto TreeSet<T>::height() const noexcept -> std::size_t {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::height() const noexcept -> std::size_t {
   return height(m_root);
 }
 
-template <typename T> auto TreeSet<T>::is_empty() const noexcept -> bool {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::is_empty() const noexcept -> bool {
   return node_count == 0;
 }
 
-template <typename T>
-auto TreeSet<T>::is_element(const T &t_value) const noexcept -> bool {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::is_element(const T &t_value) const noexcept -> bool {
   return search(t_value, m_root) != m_nil;
 }
 
-template <typename T> auto TreeSet<T>::root() noexcept -> Node<T> * {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::root() noexcept -> Node<T> * {
   return m_root;
 }
 
-template <typename T>
-auto TreeSet<T>::min(Node<T> *t_node) noexcept -> Node<T> * {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::min(Node<T> *t_node) noexcept -> Node<T> * {
   while (t_node->left != m_nil) {
     t_node = t_node->left;
   }
   return t_node;
 }
 
-template <typename T>
-auto TreeSet<T>::max(Node<T> *t_node) noexcept -> Node<T> * {
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::max(Node<T> *t_node) noexcept -> Node<T> * {
   while (t_node->right != m_nil) {
     t_node = t_node->right;
   }
   return t_node;
 }
 
-template <typename T>
-auto TreeSet<T>::begin() noexcept -> TreeSetIterator<T, inorder_t, false> {
-  return TreeSetIterator<T, inorder_t, false>(leftmost(), this, false);
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::begin() noexcept
+    -> TreeSetIterator<T, inorder_t, false, Compare> {
+  return TreeSetIterator<T, inorder_t, false, Compare>(leftmost(), this, false);
 }
 
-template <typename T>
-auto TreeSet<T>::end() noexcept -> TreeSetIterator<T, inorder_t, false> {
-  return TreeSetIterator<T, inorder_t, false>(m_nil, this, false);
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::end() noexcept
+    -> TreeSetIterator<T, inorder_t, false, Compare> {
+  return TreeSetIterator<T, inorder_t, false, Compare>(m_nil, this, false);
 }
 
-template <typename T>
-auto TreeSet<T>::rbegin() noexcept -> TreeSetIterator<T, inorder_t, false> {
-  return TreeSetIterator<T, inorder_t, false>(rightmost(), this, true);
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::rbegin() noexcept
+    -> TreeSetIterator<T, inorder_t, false, Compare> {
+  return TreeSetIterator<T, inorder_t, false, Compare>(rightmost(), this, true);
 }
 
-template <typename T>
-auto TreeSet<T>::rend() noexcept -> TreeSetIterator<T, inorder_t, false> {
-  return TreeSetIterator<T, inorder_t, false>(m_nil, this, true);
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::rend() noexcept
+    -> TreeSetIterator<T, inorder_t, false, Compare> {
+  return TreeSetIterator<T, inorder_t, false, Compare>(m_nil, this, true);
 }
 
-template <typename T>
-auto TreeSet<T>::cbegin() const noexcept
-    -> TreeSetIterator<T, inorder_t, true> {
-  return TreeSetIterator<T, inorder_t, true>(leftmost(), this, false);
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::cbegin() const noexcept
+    -> TreeSetIterator<T, inorder_t, true, Compare> {
+  return TreeSetIterator<T, inorder_t, true, Compare>(leftmost(), this, false);
 }
 
-template <typename T>
-auto TreeSet<T>::cend() const noexcept -> TreeSetIterator<T, inorder_t, true> {
-  return TreeSetIterator<T, inorder_t, true>(m_nil, this, false);
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::cend() const noexcept
+    -> TreeSetIterator<T, inorder_t, true, Compare> {
+  return TreeSetIterator<T, inorder_t, true, Compare>(m_nil, this, false);
 }
 
-template <typename T>
-auto TreeSet<T>::crbegin() const noexcept
-    -> TreeSetIterator<T, inorder_t, true> {
-  return TreeSetIterator<T, inorder_t, true>(rightmost(), this, true);
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::crbegin() const noexcept
+    -> TreeSetIterator<T, inorder_t, true, Compare> {
+  return TreeSetIterator<T, inorder_t, true, Compare>(rightmost(), this, true);
 }
 
-template <typename T>
-auto TreeSet<T>::crend() const noexcept -> TreeSetIterator<T, inorder_t, true> {
-  return TreeSetIterator<T, inorder_t, true>(m_nil, this, true);
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::crend() const noexcept
+    -> TreeSetIterator<T, inorder_t, true, Compare> {
+  return TreeSetIterator<T, inorder_t, true, Compare>(m_nil, this, true);
 }
 
-template <typename T>
+template <typename T, typename Compare>
 template <typename Traversal>
-auto TreeSet<T>::begin() noexcept -> TreeSetIterator<T, Traversal, false> {
+auto TreeSet<T, Compare>::begin() noexcept
+    -> TreeSetIterator<T, Traversal, false, Compare> {
   if constexpr (std::is_same_v<Traversal, preorder_t>) {
-    return TreeSetIterator<T, Traversal, false>(m_root, this, false);
+    return TreeSetIterator<T, Traversal, false, Compare>(m_root, this, false);
   } else if constexpr (std::is_same_v<Traversal, postorder_t>) {
-    return TreeSetIterator<T, Traversal, false>(first_postorder(), this, false);
+    return TreeSetIterator<T, Traversal, false, Compare>(first_postorder(),
+                                                         this, false);
   } else {
-    return TreeSetIterator<T, Traversal, false>(leftmost(), this, false);
+    return TreeSetIterator<T, Traversal, false, Compare>(leftmost(), this,
+                                                         false);
   }
 }
 
-template <typename T>
+template <typename T, typename Compare>
 template <typename Traversal>
-auto TreeSet<T>::end() noexcept -> TreeSetIterator<T, Traversal, false> {
-  return TreeSetIterator<T, Traversal, false>(m_nil, this, false);
+auto TreeSet<T, Compare>::end() noexcept
+    -> TreeSetIterator<T, Traversal, false, Compare> {
+  return TreeSetIterator<T, Traversal, false, Compare>(m_nil, this, false);
 }
 
-template <typename T>
+template <typename T, typename Compare>
 template <typename Traversal>
-auto TreeSet<T>::rbegin() noexcept -> TreeSetIterator<T, Traversal, false> {
+auto TreeSet<T, Compare>::rbegin() noexcept
+    -> TreeSetIterator<T, Traversal, false, Compare> {
   if constexpr (std::is_same_v<Traversal, preorder_t>) {
-    return TreeSetIterator<T, Traversal, false>(last_preorder(), this, true);
+    return TreeSetIterator<T, Traversal, false, Compare>(last_preorder(), this,
+                                                         true);
   } else if constexpr (std::is_same_v<Traversal, postorder_t>) {
-    return TreeSetIterator<T, Traversal, false>(m_root, this, true);
+    return TreeSetIterator<T, Traversal, false, Compare>(m_root, this, true);
   } else {
-    return TreeSetIterator<T, Traversal, false>(rightmost(), this, true);
+    return TreeSetIterator<T, Traversal, false, Compare>(rightmost(), this,
+                                                         true);
   }
 }
 
-template <typename T>
+template <typename T, typename Compare>
 template <typename Traversal>
-auto TreeSet<T>::rend() noexcept -> TreeSetIterator<T, Traversal, false> {
-  return TreeSetIterator<T, Traversal, false>(m_nil, this, true);
+auto TreeSet<T, Compare>::rend() noexcept
+    -> TreeSetIterator<T, Traversal, false, Compare> {
+  return TreeSetIterator<T, Traversal, false, Compare>(m_nil, this, true);
 }
 
-template <typename T>
+template <typename T, typename Compare>
 template <typename Traversal>
-auto TreeSet<T>::cbegin() const noexcept
-    -> TreeSetIterator<T, Traversal, true> {
+auto TreeSet<T, Compare>::cbegin() const noexcept
+    -> TreeSetIterator<T, Traversal, true, Compare> {
   if constexpr (std::is_same_v<Traversal, preorder_t>) {
-    return TreeSetIterator<T, Traversal, true>(m_root, this, false);
+    return TreeSetIterator<T, Traversal, true, Compare>(m_root, this, false);
   } else if constexpr (std::is_same_v<Traversal, postorder_t>) {
-    return TreeSetIterator<T, Traversal, true>(first_postorder(), this, false);
+    return TreeSetIterator<T, Traversal, true, Compare>(first_postorder(), this,
+                                                        false);
   } else {
-    return TreeSetIterator<T, Traversal, true>(leftmost(), this, false);
+    return TreeSetIterator<T, Traversal, true, Compare>(leftmost(), this,
+                                                        false);
   }
 }
 
-template <typename T>
+template <typename T, typename Compare>
 template <typename Traversal>
-auto TreeSet<T>::cend() const noexcept -> TreeSetIterator<T, Traversal, true> {
-  return TreeSetIterator<T, Traversal, true>(m_nil, this, false);
+auto TreeSet<T, Compare>::cend() const noexcept
+    -> TreeSetIterator<T, Traversal, true, Compare> {
+  return TreeSetIterator<T, Traversal, true, Compare>(m_nil, this, false);
 }
 
-template <typename T>
+template <typename T, typename Compare>
 template <typename Traversal>
-auto TreeSet<T>::crbegin() const noexcept
-    -> TreeSetIterator<T, Traversal, true> {
+auto TreeSet<T, Compare>::crbegin() const noexcept
+    -> TreeSetIterator<T, Traversal, true, Compare> {
   if constexpr (std::is_same_v<Traversal, preorder_t>) {
-    return TreeSetIterator<T, Traversal, true>(last_preorder(), this, true);
+    return TreeSetIterator<T, Traversal, true, Compare>(last_preorder(), this,
+                                                        true);
   } else if constexpr (std::is_same_v<Traversal, postorder_t>) {
-    return TreeSetIterator<T, Traversal, true>(m_root, this, true);
+    return TreeSetIterator<T, Traversal, true, Compare>(m_root, this, true);
   } else {
-    return TreeSetIterator<T, Traversal, true>(rightmost(), this, true);
+    return TreeSetIterator<T, Traversal, true, Compare>(rightmost(), this,
+                                                        true);
   }
 }
 
-template <typename T>
+template <typename T, typename Compare>
 template <typename Traversal>
-auto TreeSet<T>::crend() const noexcept -> TreeSetIterator<T, Traversal, true> {
-  return TreeSetIterator<T, Traversal, true>(m_nil, this, true);
+auto TreeSet<T, Compare>::crend() const noexcept
+    -> TreeSetIterator<T, Traversal, true, Compare> {
+  return TreeSetIterator<T, Traversal, true, Compare>(m_nil, this, true);
 }
 
 #endif // TREESET_TPP

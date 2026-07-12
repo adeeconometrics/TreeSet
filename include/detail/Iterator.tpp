@@ -3,8 +3,9 @@
 
 #include <type_traits>
 
-template <typename T, typename Traversal, bool IsConst>
-auto TreeSetIterator<T, Traversal, IsConst>::advance_forward() -> void {
+template <typename T, typename Traversal, bool IsConst, typename Compare>
+auto TreeSetIterator<T, Traversal, IsConst, Compare>::advance_forward()
+    -> void {
   if constexpr (std::is_same_v<Traversal, inorder_t>) {
     if (m_current->right != m_tree->m_nil) {
       m_current = m_current->right;
@@ -61,8 +62,9 @@ auto TreeSetIterator<T, Traversal, IsConst>::advance_forward() -> void {
   }
 }
 
-template <typename T, typename Traversal, bool IsConst>
-auto TreeSetIterator<T, Traversal, IsConst>::advance_backward() -> void {
+template <typename T, typename Traversal, bool IsConst, typename Compare>
+auto TreeSetIterator<T, Traversal, IsConst, Compare>::advance_backward()
+    -> void {
   if constexpr (std::is_same_v<Traversal, inorder_t>) {
     if (m_current == m_tree->m_nil) {
       m_current = m_tree->m_root;
