@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: git
         run: git --version
       - name: configure
@@ -20,6 +20,7 @@ jobs:
           pip3 install breathe
           pip3 install pydata-sphinx-theme
           pip3 install sphinx-sitemap
+          pip3 install semgrep
       - name: gtest
         run: | 
           sudo apt-get install libgtest-dev
@@ -43,12 +44,12 @@ jobs:
         run: | 
           cd ${{github.workspace}}/build 
           ctest --output-on-failure
-      - name: checkout repo
-        uses: actions/checkout@1.0.0
+      - name: semgrep
+        run: |
+          semgrep scan --config .semgrep/rules/ src/ include/ test/
       - name: build docs
         run: |
           cd docs_sphinx
-          doxygen Doxyfile.in
           make html
           cd _build/html
           touch .nojekyll
