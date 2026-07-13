@@ -12,8 +12,9 @@ TreeSet<T, Compare>::TreeSet()
 
 template <typename T, typename Compare>
 TreeSet<T, Compare>::TreeSet(std::initializer_list<T> t_init) : TreeSet() {
-  for (const auto &val : t_init)
+  for (const auto &val : t_init) {
     insert(val);
+  }
 }
 
 template <typename T, typename Compare> TreeSet<T, Compare>::~TreeSet() {
@@ -23,7 +24,7 @@ template <typename T, typename Compare> TreeSet<T, Compare>::~TreeSet() {
 }
 
 template <typename T, typename Compare>
-TreeSet<T, Compare>::TreeSet(TreeSet &&t_other)
+TreeSet<T, Compare>::TreeSet(TreeSet &&t_other) noexcept
     : m_nil(t_other.m_nil), m_root(t_other.m_root),
       node_count(t_other.node_count), m_comp(std::move(t_other.m_comp)) {
   t_other.m_nil = new Node<T>(T{}, Color::Black, nullptr, nullptr, nullptr);
@@ -34,7 +35,7 @@ TreeSet<T, Compare>::TreeSet(TreeSet &&t_other)
 }
 
 template <typename T, typename Compare>
-auto TreeSet<T, Compare>::operator=(TreeSet &&t_other) -> TreeSet & {
+auto TreeSet<T, Compare>::operator=(TreeSet &&t_other) noexcept -> TreeSet & {
   if (this != &t_other) {
     destroy(m_root);
     delete m_nil;
@@ -63,7 +64,7 @@ auto TreeSet<T, Compare>::destroy(Node<T> *t_node) -> void {
 
 template <typename T, typename Compare>
 auto TreeSet<T, Compare>::insert(const T &t_value) -> bool {
-  auto *z = new Node<T>(t_value, Color::Red, m_nil, m_nil, m_nil);
+  auto *z = new Node<T>(t_value, Color::Red, m_nil, m_nil, m_nil); // nosem
   auto *y = m_nil;
   auto *x = m_root;
 

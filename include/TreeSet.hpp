@@ -135,8 +135,8 @@ public:
   TreeSet(const TreeSet &) = delete;
   auto operator=(const TreeSet &) -> TreeSet & = delete;
 
-  TreeSet(TreeSet &&t_other);
-  auto operator=(TreeSet &&t_other) -> TreeSet &;
+  TreeSet(TreeSet &&t_other) noexcept;
+  auto operator=(TreeSet &&t_other) noexcept -> TreeSet &;
 
   auto insert(const T &t_value) -> bool;
   auto remove(const T &t_value) -> bool;
