@@ -15,7 +15,7 @@ jobs:
         run: git --version
       - name: configure
         run: |
-          sudo apt-get install make cmake build-essential libomp-dev doxygen
+          sudo apt-get update && sudo apt-get install make cmake build-essential clang-tidy clang-format libomp-dev doxygen
           pip3 install sphinx
           pip3 install breathe
           pip3 install pydata-sphinx-theme
@@ -23,7 +23,7 @@ jobs:
           pip3 install semgrep
       - name: gtest
         run: | 
-          sudo apt-get install libgtest-dev
+          sudo apt-get update && sudo apt-get install libgtest-dev
           cd ${{github.workspace}} 
           mkdir lib
           cd lib
@@ -33,17 +33,17 @@ jobs:
           cd build 
           cmake ../  
           make
-      - name: build
+      - name: build and test
         run: | 
           cd ${{github.workspace}} 
-          mkdir build
+          mkdir -p build
           cd build 
           cmake ../ 
           make
-      - name: test
-        run: | 
-          cd ${{github.workspace}}/build 
           ctest --output-on-failure
+      - name: lint (clang-tidy)
+        run: |
+          clang-tidy src/*.cpp include/*.hpp include/detail/*.tpp -- -std=c++17
       - name: semgrep
         run: |
           semgrep scan --config .semgrep/rules/ src/ include/ test/
