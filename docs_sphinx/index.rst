@@ -10,6 +10,8 @@ Welcome to TreeSet's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   api/index
+
 .. image:: ../img/TreeSetLogo.png
    :alt: logo
    :align: center

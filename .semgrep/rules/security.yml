@@ -1,0 +1,62 @@
+rules:
+  - id: cpp-exit-in-catch
+    pattern: |
+      catch (...) {
+        ...
+        exit(...);
+      }
+    message: |
+      Calling exit() inside a catch block terminates the process without
+      unwinding the stack or cleaning up resources. Prefer throwing an
+      exception or returning an error code.
+    languages: [cpp]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-754: Improper Check for Unusual or Exceptional Conditions"
+      confidence: HIGH
+
+  - id: cpp-exit-in-catch-specific
+    pattern: |
+      catch ($TYPE $E) {
+        ...
+        exit(...);
+      }
+    message: |
+      Calling exit() inside a catch block terminates the process without
+      unwinding the stack or cleaning up resources. Prefer throwing an
+      exception or returning an error code.
+    languages: [cpp]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-754: Improper Check for Unusual or Exceptional Conditions"
+      confidence: HIGH
+
+  - id: cpp-c-style-cast
+    pattern: ($TYPE) $EXPR
+    message: |
+      C-style cast detected. Prefer C++ casts (static_cast, const_cast,
+      reinterpret_cast) for type safety and better error diagnostics.
+    languages: [cpp]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-704: Incorrect Type Conversion"
+      confidence: HIGH
+      references:
+        - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#es48-avoid-casts
+
+  - id: cpp-exception-by-value
+    pattern: catch ($TYPE $E) { ... }
+    message: |
+      Catching exception by value may slice derived exceptions. Catch
+      by reference instead: catch (const $TYPE& $E).
+    languages: [cpp]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: "CWE-398: Code Quality"
+      confidence: MEDIUM
+      references:
+        - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Re-catching

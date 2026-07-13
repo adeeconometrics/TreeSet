@@ -2,5 +2,6 @@
 
 TreeSet API
 =============
+
 .. doxygenfile:: TreeSet.hpp
-  :project: C++ Sphinx Doxygen Breathe
+   :project: C++ Sphinx Doxygen Breathe

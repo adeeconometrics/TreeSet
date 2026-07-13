@@ -1,0 +1,6 @@
+build/
+lib/
+docs_sphinx/_build/
+docs_doxy/
+.git/
+.vscode/

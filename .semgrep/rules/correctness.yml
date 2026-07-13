@@ -1,0 +1,74 @@
+rules:
+  - id: cpp-double-assignment
+    patterns:
+      - pattern: |
+          $VAR = $VAL1;
+          ...
+          $VAR = $VAL2;
+      - pattern-not: |
+          $VAR = $VAL1;
+          ...
+          $VAR = $VAL1;
+    message: |
+      Consecutive assignments to '$VAR' detected. The second assignment
+      overwrites the first, which is almost certainly a bug. Review the
+      logic to determine if one of the assignments should be removed or
+      if a different variable was intended.
+    languages: [cpp]
+    severity: ERROR
+    metadata:
+      category: correctness
+      cwe: "CWE-563: Assignment to Variable without Use"
+      confidence: HIGH
+
+  - id: cpp-wrong-branch-condition
+    patterns:
+      - pattern: |
+          while ($NODE->left != $NIL)
+            $NODE = $NODE->right;
+      - pattern-not: |
+          while ($NODE->right != $NIL)
+            $NODE = $NODE->right;
+    message: |
+      Loop condition checks '$NODE->left' but the loop body advances
+      '$NODE->right'. This is likely a bug — the condition should
+      probably check '$NODE->right' instead.
+    languages: [cpp]
+    severity: ERROR
+    metadata:
+      category: correctness
+      cwe: "CWE-670: Always-Incorrect Control Flow Implementation"
+      confidence: HIGH
+
+  - id: cpp-constructor-self-assign
+    pattern: |
+      $PTR = this;
+    message: |
+      Assigning 'this' to a raw pointer inside a constructor body. If
+      this pointer is later overwritten, the self-assignment is dead code
+      and likely indicates a logic error. Consider using the member
+      initializer list instead.
+    languages: [cpp]
+    severity: ERROR
+    metadata:
+      category: correctness
+      cwe: "CWE-563: Assignment to Variable without Use"
+      confidence: MEDIUM
+
+  - id: cpp-nil-parent-set-nullptr
+    patterns:
+      - pattern: |
+          $NIL->parent = nullptr;
+      - metavariable-comparison:
+          metavariable: $NIL
+          comparison: $NIL == "NIL"
+    message: |
+      Setting NIL->parent to nullptr may break invariants if other code
+      checks 'parent == NIL'. This can cause null pointer dereferences
+      when traversing parent pointers.
+    languages: [cpp]
+    severity: ERROR
+    metadata:
+      category: correctness
+      cwe: "CWE-476: NULL Pointer Dereference"
+      confidence: MEDIUM
