@@ -19,6 +19,7 @@ TreeSet<T, Compare>::TreeSet(std::initializer_list<T> t_init) : TreeSet() {
 template <typename T, typename Compare> TreeSet<T, Compare>::~TreeSet() {
   destroy(m_root);
   delete m_nil;
+  m_nil = nullptr;
 }
 
 template <typename T, typename Compare>
@@ -27,6 +28,7 @@ auto TreeSet<T, Compare>::destroy(Node<T> *t_node) -> void {
     destroy(t_node->left);
     destroy(t_node->right);
     delete t_node;
+    t_node = nullptr;
   }
 }
 
@@ -44,6 +46,7 @@ auto TreeSet<T, Compare>::insert(const T &t_value) -> bool {
       x = x->right;
     } else {
       delete z;
+      z = nullptr;
       return false;
     }
   }
@@ -100,6 +103,7 @@ auto TreeSet<T, Compare>::remove(const T &t_value) -> bool {
   }
 
   delete z;
+  z = nullptr;
   --node_count;
 
   if (y_original_color == Color::Black) {
