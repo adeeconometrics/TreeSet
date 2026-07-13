@@ -42,8 +42,7 @@ jobs:
           make
           ctest --output-on-failure
       - name: lint (clang-tidy)
-        run: |
-          clang-tidy --extra-arg-before=-xc++-header src/*.cpp include/*.hpp include/detail/*.tpp -- -std=c++17
+        run: clang-tidy --extra-arg-before=-xc++-header src/*.cpp include/*.hpp include/detail/*.tpp -- -std=c++17
      - name: semgrep
         run: |
           semgrep scan --config .semgrep/rules/ src/ include/ test/
