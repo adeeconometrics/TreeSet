@@ -6,6 +6,7 @@
 #include <initializer_list>
 #include <iterator>
 #include <type_traits>
+#include <utility>
 
 enum Color : bool {
   Red = true,
@@ -134,6 +135,9 @@ public:
   TreeSet(const TreeSet &) = delete;
   auto operator=(const TreeSet &) -> TreeSet & = delete;
 
+  TreeSet(TreeSet &&t_other);
+  auto operator=(TreeSet &&t_other) -> TreeSet &;
+
   auto insert(const T &t_value) -> bool;
   auto remove(const T &t_value) -> bool;
 
@@ -203,6 +207,41 @@ private:
 
   template <typename U, typename Traversal, bool IsConst, typename C>
   friend class TreeSetIterator;
+
+  template <typename U, typename C>
+  friend auto symmetric_diff(const TreeSet<U, C> &, const TreeSet<U, C> &)
+      -> TreeSet<U, C>;
+  template <typename U, typename C>
+  friend auto set_union(const TreeSet<U, C> &, const TreeSet<U, C> &)
+      -> TreeSet<U, C>;
+  template <typename U, typename C>
+  friend auto intersection(const TreeSet<U, C> &, const TreeSet<U, C> &)
+      -> TreeSet<U, C>;
+  template <typename U, typename C>
+  friend auto asymmetric_diff(const TreeSet<U, C> &, const TreeSet<U, C> &)
+      -> TreeSet<U, C>;
+  template <typename U, typename C>
+  friend auto set_or(const TreeSet<U, C> &, const TreeSet<U, C> &)
+      -> TreeSet<U, C>;
+  template <typename U, typename C>
+  friend auto set_and(const TreeSet<U, C> &, const TreeSet<U, C> &)
+      -> TreeSet<U, C>;
+  template <typename U, typename C>
+  friend auto product(const TreeSet<U, C> &, const TreeSet<U, C> &)
+      -> TreeSet<std::pair<U, U>, std::less<std::pair<U, U>>>;
+
+  template <typename U, typename C>
+  friend auto operator-(const TreeSet<U, C> &, const TreeSet<U, C> &)
+      -> TreeSet<U, C>;
+  template <typename U, typename C>
+  friend auto operator||(const TreeSet<U, C> &, const TreeSet<U, C> &)
+      -> TreeSet<U, C>;
+  template <typename U, typename C>
+  friend auto operator&&(const TreeSet<U, C> &, const TreeSet<U, C> &)
+      -> TreeSet<U, C>;
+  template <typename U, typename C>
+  friend auto operator*(const TreeSet<U, C> &, const TreeSet<U, C> &)
+      -> TreeSet<std::pair<U, U>, std::less<std::pair<U, U>>>;
 };
 
 #include "detail/Iterator.tpp"

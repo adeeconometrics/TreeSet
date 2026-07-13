@@ -23,6 +23,35 @@ template <typename T, typename Compare> TreeSet<T, Compare>::~TreeSet() {
 }
 
 template <typename T, typename Compare>
+TreeSet<T, Compare>::TreeSet(TreeSet &&t_other)
+    : m_nil(t_other.m_nil), m_root(t_other.m_root),
+      node_count(t_other.node_count), m_comp(std::move(t_other.m_comp)) {
+  t_other.m_nil = new Node<T>(T{}, Color::Black, nullptr, nullptr, nullptr);
+  t_other.m_nil->left = t_other.m_nil->right = t_other.m_nil->parent =
+      t_other.m_nil;
+  t_other.m_root = t_other.m_nil;
+  t_other.node_count = 0;
+}
+
+template <typename T, typename Compare>
+auto TreeSet<T, Compare>::operator=(TreeSet &&t_other) -> TreeSet & {
+  if (this != &t_other) {
+    destroy(m_root);
+    delete m_nil;
+    m_nil = t_other.m_nil;
+    m_root = t_other.m_root;
+    node_count = t_other.node_count;
+    m_comp = std::move(t_other.m_comp);
+    t_other.m_nil = new Node<T>(T{}, Color::Black, nullptr, nullptr, nullptr);
+    t_other.m_nil->left = t_other.m_nil->right = t_other.m_nil->parent =
+        t_other.m_nil;
+    t_other.m_root = t_other.m_nil;
+    t_other.node_count = 0;
+  }
+  return *this;
+}
+
+template <typename T, typename Compare>
 auto TreeSet<T, Compare>::destroy(Node<T> *t_node) -> void {
   if (t_node != m_nil) {
     destroy(t_node->left);
