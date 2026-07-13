@@ -12,6 +12,5 @@ Checks: >
   readability-redundant-smartptr-get,
   readability-identifier-naming
 WarningsAsErrors: true
-AnalyzeTemporaryDtors: false
 ExtraArgs:
   - -std=c++17
