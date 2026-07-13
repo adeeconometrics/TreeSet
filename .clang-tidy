@@ -2,6 +2,7 @@ Checks: >
   clang-diagnostic-*,
   clang-analyzer-*,
   cppcoreguidelines-*,
+  -cppcoreguidelines-owning-memory,
   modernize-use-trailing-return-type,
   modernize-use-auto,
   modernize-use-nullptr,
@@ -12,5 +13,6 @@ Checks: >
   readability-redundant-smartptr-get,
   readability-identifier-naming
 WarningsAsErrors: true
+HeaderFilterRegex: '.*'
 ExtraArgs:
   - -std=c++17
