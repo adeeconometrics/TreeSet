@@ -41,7 +41,9 @@ rules:
       confidence: HIGH
 
   - id: cpp-return-local-address
-    pattern: return &$LOCAL;
+    patterns:
+      - pattern: return &$LOCAL;
+      - pattern-not: return &...->...;
     message: |
       Returning address of local variable '$LOCAL'. The pointer becomes
       dangling as soon as the function returns, leading to undefined

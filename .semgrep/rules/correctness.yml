@@ -9,17 +9,23 @@ rules:
           $VAR = $VAL1;
           ...
           $VAR = $VAL1;
+      - pattern-not: |
+          $VAR = $VAL1;
+          while (...) { ... $VAR = ...; ... }
+      - pattern-not: |
+          $VAR = $VAL1;
+          if (...) { ... $VAR = ...; ... }
     message: |
       Consecutive assignments to '$VAR' detected. The second assignment
       overwrites the first, which is almost certainly a bug. Review the
       logic to determine if one of the assignments should be removed or
       if a different variable was intended.
     languages: [cpp]
-    severity: ERROR
+    severity: WARNING
     metadata:
       category: correctness
       cwe: "CWE-563: Assignment to Variable without Use"
-      confidence: HIGH
+      confidence: MEDIUM
 
   - id: cpp-wrong-branch-condition
     patterns:

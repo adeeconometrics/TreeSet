@@ -33,20 +33,21 @@ add_executable(${PROJECT_NAME} ${SRC_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 
-# Fetch GTest library
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib/googletest)
-find_package(GTest REQUIRED CONFIG)
-
-if(WIN32)
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
-endif()
+# Fetch GTest/GMock library
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG        v1.14.0
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 
 # Add test directory
 enable_testing()
 
 add_executable(unittest ${CMAKE_CURRENT_SOURCE_DIR}/test/unittest.cpp)
-target_link_libraries(unittest PRIVATE GTest::gtest_main)
+target_link_libraries(unittest PRIVATE GTest::gtest_main GTest::gmock)
 
 include(GoogleTest)
 gtest_discover_tests(unittest)
