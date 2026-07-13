@@ -46,7 +46,7 @@ endif()
 enable_testing()
 
 add_executable(unittest ${CMAKE_CURRENT_SOURCE_DIR}/test/unittest.cpp)
-target_link_libraries(unittest PRIVATE GTest::gtest_main)
+target_link_libraries(unittest PRIVATE GTest::gtest_main GTest::gmock)
 
 include(GoogleTest)
 gtest_discover_tests(unittest)
