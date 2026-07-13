@@ -146,6 +146,8 @@ public:
   auto is_empty() const noexcept -> bool;
   auto is_element(const T &t_value) const noexcept -> bool;
 
+  auto comp() const noexcept -> const Compare &;
+
   auto root() noexcept -> Node<T> *;
   auto min(Node<T> *t_node) noexcept -> Node<T> *;
   auto max(Node<T> *t_node) noexcept -> Node<T> *;
@@ -207,41 +209,6 @@ private:
 
   template <typename U, typename Traversal, bool IsConst, typename C>
   friend class TreeSetIterator;
-
-  template <typename U, typename C>
-  friend auto symmetric_diff(const TreeSet<U, C> &, const TreeSet<U, C> &)
-      -> TreeSet<U, C>;
-  template <typename U, typename C>
-  friend auto set_union(const TreeSet<U, C> &, const TreeSet<U, C> &)
-      -> TreeSet<U, C>;
-  template <typename U, typename C>
-  friend auto intersection(const TreeSet<U, C> &, const TreeSet<U, C> &)
-      -> TreeSet<U, C>;
-  template <typename U, typename C>
-  friend auto asymmetric_diff(const TreeSet<U, C> &, const TreeSet<U, C> &)
-      -> TreeSet<U, C>;
-  template <typename U, typename C>
-  friend auto set_or(const TreeSet<U, C> &, const TreeSet<U, C> &)
-      -> TreeSet<U, C>;
-  template <typename U, typename C>
-  friend auto set_and(const TreeSet<U, C> &, const TreeSet<U, C> &)
-      -> TreeSet<U, C>;
-  template <typename U, typename C>
-  friend auto product(const TreeSet<U, C> &, const TreeSet<U, C> &)
-      -> TreeSet<std::pair<U, U>, std::less<std::pair<U, U>>>;
-
-  template <typename U, typename C>
-  friend auto operator-(const TreeSet<U, C> &, const TreeSet<U, C> &)
-      -> TreeSet<U, C>;
-  template <typename U, typename C>
-  friend auto operator||(const TreeSet<U, C> &, const TreeSet<U, C> &)
-      -> TreeSet<U, C>;
-  template <typename U, typename C>
-  friend auto operator&&(const TreeSet<U, C> &, const TreeSet<U, C> &)
-      -> TreeSet<U, C>;
-  template <typename U, typename C>
-  friend auto operator*(const TreeSet<U, C> &, const TreeSet<U, C> &)
-      -> TreeSet<std::pair<U, U>, std::less<std::pair<U, U>>>;
 };
 
 #include "detail/Iterator.tpp"

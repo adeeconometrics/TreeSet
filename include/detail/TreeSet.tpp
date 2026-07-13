@@ -447,6 +447,11 @@ auto TreeSet<T, Compare>::is_element(const T &t_value) const noexcept -> bool {
 }
 
 template <typename T, typename Compare>
+auto TreeSet<T, Compare>::comp() const noexcept -> const Compare & {
+  return m_comp;
+}
+
+template <typename T, typename Compare>
 auto TreeSet<T, Compare>::root() noexcept -> Node<T> * {
   return m_root;
 }

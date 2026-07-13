@@ -11,10 +11,10 @@ auto symmetric_diff(const TreeSet<T, Compare> &t_lhs,
   auto end_b = t_rhs.cend();
 
   while (it_a != end_a && it_b != end_b) {
-    if (t_lhs.m_comp(*it_a, *it_b)) {
+    if (t_lhs.comp()(*it_a, *it_b)) {
       result.insert(*it_a);
       ++it_a;
-    } else if (t_lhs.m_comp(*it_b, *it_a)) {
+    } else if (t_lhs.comp()(*it_b, *it_a)) {
       result.insert(*it_b);
       ++it_b;
     } else {
@@ -43,10 +43,10 @@ auto set_union(const TreeSet<T, Compare> &t_lhs,
   auto end_b = t_rhs.cend();
 
   while (it_a != end_a && it_b != end_b) {
-    if (t_lhs.m_comp(*it_a, *it_b)) {
+    if (t_lhs.comp()(*it_a, *it_b)) {
       result.insert(*it_a);
       ++it_a;
-    } else if (t_lhs.m_comp(*it_b, *it_a)) {
+    } else if (t_lhs.comp()(*it_b, *it_a)) {
       result.insert(*it_b);
       ++it_b;
     } else {
@@ -76,9 +76,9 @@ auto intersection(const TreeSet<T, Compare> &t_lhs,
   auto end_b = t_rhs.cend();
 
   while (it_a != end_a && it_b != end_b) {
-    if (t_lhs.m_comp(*it_a, *it_b)) {
+    if (t_lhs.comp()(*it_a, *it_b)) {
       ++it_a;
-    } else if (t_lhs.m_comp(*it_b, *it_a)) {
+    } else if (t_lhs.comp()(*it_b, *it_a)) {
       ++it_b;
     } else {
       result.insert(*it_a);
@@ -99,10 +99,10 @@ auto asymmetric_diff(const TreeSet<T, Compare> &t_lhs,
   auto end_b = t_rhs.cend();
 
   while (it_a != end_a && it_b != end_b) {
-    if (t_lhs.m_comp(*it_a, *it_b)) {
+    if (t_lhs.comp()(*it_a, *it_b)) {
       result.insert(*it_a);
       ++it_a;
-    } else if (t_lhs.m_comp(*it_b, *it_a)) {
+    } else if (t_lhs.comp()(*it_b, *it_a)) {
       ++it_b;
     } else {
       ++it_a;
