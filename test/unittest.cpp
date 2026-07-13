@@ -1,10 +1,12 @@
 #include "../include/TreeSet.hpp"
+#include "../include/TreeSetOps.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include <algorithm>
 #include <functional>
 #include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 
 using ::testing::ElementsAre;
@@ -968,4 +970,450 @@ TEST_F(TreeSetGreaterCompTest, RemoveTriggersRotationWithGreaterComp) {
   EXPECT_EQ(tree.size(), 6u);
   auto in = inorder_vec();
   EXPECT_TRUE(std::is_sorted(in.begin(), in.end(), std::greater<int>{}));
+}
+
+// ============================================================================
+// Group 16: Move Semantics
+// ============================================================================
+
+class TreeSetMoveTest : public ::testing::Test {
+protected:
+  auto inorder_vec(const TreeSet<int> &t) -> std::vector<int> {
+    std::vector<int> result;
+    for (auto it = t.cbegin(); it != t.cend(); ++it)
+      result.push_back(*it);
+    return result;
+  }
+};
+
+TEST_F(TreeSetMoveTest, MoveConstructorTransfersOwnership) {
+  TreeSet<int> a;
+  a.insert(1);
+  a.insert(2);
+  a.insert(3);
+
+  TreeSet<int> b(std::move(a));
+  EXPECT_EQ(b.size(), 3u);
+  EXPECT_THAT(inorder_vec(b), ElementsAre(1, 2, 3));
+  EXPECT_TRUE(a.is_empty());
+}
+
+TEST_F(TreeSetMoveTest, MoveAssignmentTransfersOwnership) {
+  TreeSet<int> a;
+  a.insert(10);
+  a.insert(20);
+
+  TreeSet<int> b;
+  b.insert(99);
+
+  b = std::move(a);
+  EXPECT_EQ(b.size(), 2u);
+  EXPECT_THAT(inorder_vec(b), ElementsAre(10, 20));
+  EXPECT_TRUE(a.is_empty());
+}
+
+TEST_F(TreeSetMoveTest, MoveFromEmptyTree) {
+  TreeSet<int> a;
+  TreeSet<int> b(std::move(a));
+  EXPECT_TRUE(b.is_empty());
+  EXPECT_EQ(b.size(), 0u);
+}
+
+TEST_F(TreeSetMoveTest, MoveAssignmentSelfIsNoop) {
+  TreeSet<int> a;
+  a.insert(5);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-move"
+  a = std::move(a);
+#pragma clang diagnostic pop
+  EXPECT_EQ(a.size(), 1u);
+  EXPECT_TRUE(a.is_element(5));
+}
+
+TEST_F(TreeSetMoveTest, MovedFromTreeUsableAfterMove) {
+  TreeSet<int> a;
+  a.insert(1);
+  a.insert(2);
+  TreeSet<int> b(std::move(a));
+  ASSERT_TRUE(a.insert(10));
+  EXPECT_EQ(a.size(), 1u);
+  EXPECT_TRUE(a.is_element(10));
+}
+
+// ============================================================================
+// Group 17: Set Operations
+// ============================================================================
+
+class TreeSetOpsTest : public ::testing::Test {
+protected:
+  auto inorder_vec(const TreeSet<int> &t) -> std::vector<int> {
+    std::vector<int> result;
+    for (auto it = t.cbegin(); it != t.cend(); ++it)
+      result.push_back(*it);
+    return result;
+  }
+};
+
+TEST_F(TreeSetOpsTest, SymmetricDiffDisjoint) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{4, 5, 6};
+  auto result = symmetric_diff(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3, 4, 5, 6));
+}
+
+TEST_F(TreeSetOpsTest, SymmetricDiffOverlapping) {
+  TreeSet<int> a{1, 2, 3, 4};
+  TreeSet<int> b{3, 4, 5, 6};
+  auto result = symmetric_diff(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 5, 6));
+}
+
+TEST_F(TreeSetOpsTest, SymmetricDiffIdentical) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{1, 2, 3};
+  auto result = symmetric_diff(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, SymmetricDiffEmptyLeft) {
+  TreeSet<int> a;
+  TreeSet<int> b{1, 2, 3};
+  auto result = symmetric_diff(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3));
+}
+
+TEST_F(TreeSetOpsTest, SymmetricDiffEmptyRight) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b;
+  auto result = symmetric_diff(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3));
+}
+
+TEST_F(TreeSetOpsTest, SymmetricDiffBothEmpty) {
+  TreeSet<int> a;
+  TreeSet<int> b;
+  auto result = symmetric_diff(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, SetUnionDisjoint) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{4, 5, 6};
+  auto result = set_union(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3, 4, 5, 6));
+}
+
+TEST_F(TreeSetOpsTest, SetUnionOverlapping) {
+  TreeSet<int> a{1, 2, 3, 4};
+  TreeSet<int> b{3, 4, 5, 6};
+  auto result = set_union(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3, 4, 5, 6));
+}
+
+TEST_F(TreeSetOpsTest, SetUnionIdentical) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{1, 2, 3};
+  auto result = set_union(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3));
+}
+
+TEST_F(TreeSetOpsTest, SetUnionEmptyLeft) {
+  TreeSet<int> a;
+  TreeSet<int> b{1, 2, 3};
+  auto result = set_union(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3));
+}
+
+TEST_F(TreeSetOpsTest, SetUnionEmptyRight) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b;
+  auto result = set_union(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3));
+}
+
+TEST_F(TreeSetOpsTest, SetUnionBothEmpty) {
+  TreeSet<int> a;
+  TreeSet<int> b;
+  auto result = set_union(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, IntersectionDisjoint) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{4, 5, 6};
+  auto result = intersection(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, IntersectionOverlapping) {
+  TreeSet<int> a{1, 2, 3, 4};
+  TreeSet<int> b{3, 4, 5, 6};
+  auto result = intersection(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(3, 4));
+}
+
+TEST_F(TreeSetOpsTest, IntersectionIdentical) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{1, 2, 3};
+  auto result = intersection(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3));
+}
+
+TEST_F(TreeSetOpsTest, IntersectionEmptyLeft) {
+  TreeSet<int> a;
+  TreeSet<int> b{1, 2, 3};
+  auto result = intersection(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, IntersectionEmptyRight) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b;
+  auto result = intersection(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, IntersectionBothEmpty) {
+  TreeSet<int> a;
+  TreeSet<int> b;
+  auto result = intersection(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, AsymmetricDiffDisjoint) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{4, 5, 6};
+  auto result = asymmetric_diff(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3));
+}
+
+TEST_F(TreeSetOpsTest, AsymmetricDiffOverlapping) {
+  TreeSet<int> a{1, 2, 3, 4};
+  TreeSet<int> b{3, 4, 5, 6};
+  auto result = asymmetric_diff(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2));
+}
+
+TEST_F(TreeSetOpsTest, AsymmetricDiffIdentical) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{1, 2, 3};
+  auto result = asymmetric_diff(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, AsymmetricDiffEmptyLeft) {
+  TreeSet<int> a;
+  TreeSet<int> b{1, 2, 3};
+  auto result = asymmetric_diff(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, AsymmetricDiffEmptyRight) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b;
+  auto result = asymmetric_diff(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3));
+}
+
+TEST_F(TreeSetOpsTest, AsymmetricDiffBothEmpty) {
+  TreeSet<int> a;
+  TreeSet<int> b;
+  auto result = asymmetric_diff(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, SetOrDelegaesToUnion) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{3, 4, 5};
+  auto result = set_or(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3, 4, 5));
+}
+
+TEST_F(TreeSetOpsTest, SetAndDelegaesToIntersection) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{3, 4, 5};
+  auto result = set_and(a, b);
+  EXPECT_THAT(inorder_vec(result), ElementsAre(3));
+}
+
+// ============================================================================
+// Group 18: Operator Overloads
+// ============================================================================
+
+TEST_F(TreeSetOpsTest, OperatorMinusIsAsymmetricDiff) {
+  TreeSet<int> a{1, 2, 3, 4};
+  TreeSet<int> b{3, 4, 5, 6};
+  auto result = a - b;
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2));
+}
+
+TEST_F(TreeSetOpsTest, OperatorOrIsSetOr) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{3, 4, 5};
+  auto result = a || b;
+  EXPECT_THAT(inorder_vec(result), ElementsAre(1, 2, 3, 4, 5));
+}
+
+TEST_F(TreeSetOpsTest, OperatorAndIsSetAnd) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{3, 4, 5};
+  auto result = a && b;
+  EXPECT_THAT(inorder_vec(result), ElementsAre(3));
+}
+
+TEST_F(TreeSetOpsTest, OperatorMinusEmptySets) {
+  TreeSet<int> a;
+  TreeSet<int> b{1, 2, 3};
+  auto result = a - b;
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, OperatorOrBothEmpty) {
+  TreeSet<int> a;
+  TreeSet<int> b;
+  auto result = a || b;
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, OperatorAndDisjoint) {
+  TreeSet<int> a{1, 2};
+  TreeSet<int> b{3, 4};
+  auto result = a && b;
+  EXPECT_TRUE(result.is_empty());
+}
+
+// ============================================================================
+// Group 19: Cartesian Product
+// ============================================================================
+
+TEST_F(TreeSetOpsTest, ProductBasic) {
+  TreeSet<int> a{1, 2};
+  TreeSet<int> b{3, 4};
+  auto result = product(a, b);
+  EXPECT_EQ(result.size(), 4u);
+  EXPECT_TRUE(result.is_element({1, 3}));
+  EXPECT_TRUE(result.is_element({1, 4}));
+  EXPECT_TRUE(result.is_element({2, 3}));
+  EXPECT_TRUE(result.is_element({2, 4}));
+}
+
+TEST_F(TreeSetOpsTest, ProductEmptyLeft) {
+  TreeSet<int> a;
+  TreeSet<int> b{1, 2, 3};
+  auto result = product(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, ProductEmptyRight) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b;
+  auto result = product(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, ProductBothEmpty) {
+  TreeSet<int> a;
+  TreeSet<int> b;
+  auto result = product(a, b);
+  EXPECT_TRUE(result.is_empty());
+}
+
+TEST_F(TreeSetOpsTest, ProductSingleElements) {
+  TreeSet<int> a{5};
+  TreeSet<int> b{7};
+  auto result = product(a, b);
+  EXPECT_EQ(result.size(), 1u);
+  EXPECT_TRUE(result.is_element({5, 7}));
+}
+
+TEST_F(TreeSetOpsTest, ProductOperator) {
+  TreeSet<int> a{1, 2};
+  TreeSet<int> b{3, 4};
+  auto result = a * b;
+  EXPECT_EQ(result.size(), 4u);
+  EXPECT_TRUE(result.is_element({1, 3}));
+  EXPECT_TRUE(result.is_element({2, 4}));
+}
+
+TEST_F(TreeSetOpsTest, ProductSortedLexicographically) {
+  TreeSet<int> a{3, 1};
+  TreeSet<int> b{4, 2};
+  auto result = product(a, b);
+  std::vector<std::pair<int, int>> pairs;
+  for (auto it = result.cbegin(); it != result.cend(); ++it)
+    pairs.push_back(*it);
+  EXPECT_THAT(pairs, ElementsAre(std::make_pair(1, 2), std::make_pair(1, 4),
+                                 std::make_pair(3, 2), std::make_pair(3, 4)));
+}
+
+// ============================================================================
+// Group 20: Set Operations with Larger Sets
+// ============================================================================
+
+TEST_F(TreeSetOpsTest, LargeSetUnion) {
+  TreeSet<int> a;
+  TreeSet<int> b;
+  for (int i = 1; i <= 50; ++i)
+    a.insert(i);
+  for (int i = 26; i <= 75; ++i)
+    b.insert(i);
+  auto result = set_union(a, b);
+  EXPECT_EQ(result.size(), 75u);
+  auto in = inorder_vec(result);
+  EXPECT_EQ(in.front(), 1);
+  EXPECT_EQ(in.back(), 75);
+}
+
+TEST_F(TreeSetOpsTest, LargeSetIntersection) {
+  TreeSet<int> a;
+  TreeSet<int> b;
+  for (int i = 1; i <= 50; ++i)
+    a.insert(i);
+  for (int i = 26; i <= 75; ++i)
+    b.insert(i);
+  auto result = intersection(a, b);
+  EXPECT_EQ(result.size(), 25u);
+  auto in = inorder_vec(result);
+  EXPECT_EQ(in.front(), 26);
+  EXPECT_EQ(in.back(), 50);
+}
+
+TEST_F(TreeSetOpsTest, LargeSymmetricDiff) {
+  TreeSet<int> a;
+  TreeSet<int> b;
+  for (int i = 1; i <= 50; ++i)
+    a.insert(i);
+  for (int i = 26; i <= 75; ++i)
+    b.insert(i);
+  auto result = symmetric_diff(a, b);
+  EXPECT_EQ(result.size(), 50u);
+  auto in = inorder_vec(result);
+  EXPECT_EQ(in.front(), 1);
+  EXPECT_EQ(in.back(), 75);
+  for (int i = 26; i <= 50; ++i)
+    EXPECT_FALSE(result.is_element(i));
+}
+
+TEST_F(TreeSetOpsTest, LargeAsymmetricDiff) {
+  TreeSet<int> a;
+  TreeSet<int> b;
+  for (int i = 1; i <= 50; ++i)
+    a.insert(i);
+  for (int i = 26; i <= 75; ++i)
+    b.insert(i);
+  auto result = asymmetric_diff(a, b);
+  EXPECT_EQ(result.size(), 25u);
+  auto in = inorder_vec(result);
+  EXPECT_EQ(in.front(), 1);
+  EXPECT_EQ(in.back(), 25);
+}
+
+TEST_F(TreeSetOpsTest, LargeProduct) {
+  TreeSet<int> a{1, 2, 3};
+  TreeSet<int> b{10, 20};
+  auto result = product(a, b);
+  EXPECT_EQ(result.size(), 6u);
+  for (int x : {1, 2, 3})
+    for (int y : {10, 20})
+      EXPECT_TRUE(result.is_element({x, y}));
 }
